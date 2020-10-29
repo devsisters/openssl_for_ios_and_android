@@ -16,12 +16,12 @@
 
 # read -n1 -p "Press any key to continue..."
 
-set -u
+set -eu
 
 source ./build-ios-common.sh
 
 if [ -z ${version+x} ]; then 
-  version="1.1.1d"
+  version="1.1.1h"
 fi
 
 TOOLS_ROOT=$(pwd)
@@ -47,8 +47,6 @@ init_log_color
 
 echo "https://www.openssl.org/source/${LIB_NAME}.tar.gz"
 
-# https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz
-# https://github.com/openssl/openssl/archive/OpenSSL_1_1_1f.tar.gz
 DEVELOPER=$(xcode-select -print-path)
 rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
 [ -f "${LIB_NAME}.tar.gz" ] || curl https://www.openssl.org/source/${LIB_NAME}.tar.gz >${LIB_NAME}.tar.gz
@@ -56,9 +54,6 @@ rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
 function configure_make() {
 
     ARCH=$1
-    SDK=$2
-    PLATFORM=$3
-    SDK_PATH=$(xcrun -sdk ${SDK} --show-sdk-path)
 
     log_info "configure $ARCH start..."
 
@@ -78,34 +73,25 @@ function configure_make() {
     OUTPUT_ROOT=${TOOLS_ROOT}/../output/ios/openssl-${ARCH}
     mkdir -p ${OUTPUT_ROOT}/log
 
-    set_ios_cpu_feature "openssl" "${ARCH}" "${IOS_MIN_TARGET}" "${SDK_PATH}"
-    
-    ios_printf_global_params "$ARCH" "$SDK" "$PLATFORM" "$PREFIX_DIR" "$OUTPUT_ROOT"
-
     unset IPHONEOS_DEPLOYMENT_TARGET
-
+  
+    # openssl's Configure script selects the sdk and platform from their presets.
+    # so we don't have to set them manually.
     if [[ "${ARCH}" == "x86_64" ]]; then
 
-        # openssl1.1.1d can be set normally, 1.1.0f does not take effect
-        ./Configure darwin64-x86_64-cc no-shared --prefix="${PREFIX_DIR}"
+        ./Configure iossimulator-xcrun no-shared --prefix="${PREFIX_DIR}"
 
     elif [[ "${ARCH}" == "armv7" ]]; then
 
-        # openssl1.1.1d can be set normally, 1.1.0f does not take effect
-        ./Configure iphoneos-cross no-shared --prefix="${PREFIX_DIR}"
-        sed -ie "s!-fno-common!-fno-common -fembed-bitcode !" "Makefile"
+        ./Configure ios-xcrun no-shared --prefix="${PREFIX_DIR}"
 
     elif [[ "${ARCH}" == "arm64" ]]; then
 
-        # openssl1.1.1d can be set normally, 1.1.0f does not take effect
-        ./Configure iphoneos-cross no-shared --prefix="${PREFIX_DIR}"
-        sed -ie "s!-fno-common!-fno-common -fembed-bitcode !" "Makefile"
+        ./Configure ios64-xcrun no-shared --prefix="${PREFIX_DIR}"
 
     elif [[ "${ARCH}" == "arm64e" ]]; then
 
-        # openssl1.1.1d can be set normally, 1.1.0f does not take effect
-        ./Configure iphoneos-cross no-shared --prefix="${PREFIX_DIR}"
-        sed -ie "s!-fno-common!-fno-common -fembed-bitcode !" "Makefile"
+        ./Configure ios64-arm64e-xcrun no-shared --prefix="${PREFIX_DIR}" --config=../openssl.conf
 
     else
         log_error "not support" && exit 1
@@ -126,7 +112,7 @@ log_info "${PLATFORM_TYPE} ${LIB_NAME} start..."
 
 for ((i = 0; i < ${#ARCHS[@]}; i++)); do
     if [[ $# -eq 0 || "$1" == "${ARCHS[i]}" ]]; then
-        configure_make "${ARCHS[i]}" "${SDKS[i]}" "${PLATFORMS[i]}"
+        configure_make "${ARCHS[i]}"
     fi
 done
 
@@ -140,7 +126,9 @@ function lipo_library() {
     lipo ${LIB_PATHS[@]} -create -output "${LIB_DST}"
 }
 mkdir -p "${LIB_DEST_DIR}"
-lipo_library "libcrypto.a" "${LIB_DEST_DIR}/libcrypto-universal.a"
-lipo_library "libssl.a" "${LIB_DEST_DIR}/libssl-universal.a"
+lipo_library "libcrypto.a" "${LIB_DEST_DIR}/libcrypto.a"
+lipo_library "libssl.a" "${LIB_DEST_DIR}/libssl.a"
+mkdir -p "${LIB_DEST_DIR}/include"
+cp -r "${TOOLS_ROOT}/../output/ios/openssl-${ARCHS[0]}/include/"* "${LIB_DEST_DIR}/include"
 
 log_info "${PLATFORM_TYPE} ${LIB_NAME} end..."

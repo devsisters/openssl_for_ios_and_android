@@ -16,12 +16,12 @@
 
 # read -n1 -p "Press any key to continue..."
 
-set -u
+set -eu
 
 source ./build-ios-common.sh
 
 if [ -z ${version+x} ]; then 
-  version="7.68.0"
+  version="7.73.0"
 fi
 
 TOOLS_ROOT=$(pwd)
@@ -53,11 +53,9 @@ rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
 [ -f "${LIB_NAME}.tar.gz" ] || curl -LO https://github.com/curl/curl/releases/download/${LIB_VERSION}/${LIB_NAME}.tar.gz >${LIB_NAME}.tar.gz
 
 function configure_make() {
-
     ARCH=$1
     SDK=$2
     PLATFORM=$3
-    SDK_PATH=$(xcrun -sdk ${SDK} --show-sdk-path)
 
     log_info "configure $ARCH start..."
 
@@ -77,30 +75,32 @@ function configure_make() {
     OUTPUT_ROOT=${TOOLS_ROOT}/../output/ios/curl-${ARCH}
     mkdir -p ${OUTPUT_ROOT}/log
 
-    set_ios_cpu_feature "curl" "${ARCH}" "${IOS_MIN_TARGET}" "${SDK_PATH}"
+    set_ios_cpu_feature "curl" "${ARCH}" "${IOS_MIN_TARGET}" "${SDK}"
 
     OPENSSL_OUT_DIR="${pwd_path}/../output/ios/openssl-${ARCH}"
     NGHTTP2_OUT_DIR="${pwd_path}/../output/ios/nghttp2-${ARCH}"
 
-    export LDFLAGS="${LDFLAGS} -L${OPENSSL_OUT_DIR}/lib -L${NGHTTP2_OUT_DIR}/lib"
+    export LDFLAGS="${LDFLAGS} -L${OPENSSL_OUT_DIR}/lib -L${NGHTTP2_OUT_DIR}/lib "
 
     ios_printf_global_params "$ARCH" "$SDK" "$PLATFORM" "$PREFIX_DIR" "$OUTPUT_ROOT"
+    
+    target_host=$(ios_get_build_host "$ARCH")
 
     if [[ "${ARCH}" == "x86_64" ]]; then
 
-        ./Configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --without-libidn2 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --without-libidn2 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     elif [[ "${ARCH}" == "armv7" ]]; then
 
-        ./Configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     elif [[ "${ARCH}" == "arm64" ]]; then
 
-        ./Configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
     
     elif [[ "${ARCH}" == "arm64e" ]]; then
 
-        ./Configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     else
         log_error "not support" && exit 1
@@ -112,7 +112,6 @@ function configure_make() {
     if make -j8 >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1; then
         make install >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
     fi
-
     popd
 }
 
@@ -134,6 +133,8 @@ function lipo_library() {
     lipo ${LIB_PATHS[@]} -create -output "${LIB_DST}"
 }
 mkdir -p "${LIB_DEST_DIR}"
-lipo_library "libcurl.a" "${LIB_DEST_DIR}/libcurl-universal.a"
+lipo_library "libcurl.a" "${LIB_DEST_DIR}/libcurl.a"
+mkdir -p "${LIB_DEST_DIR}/include"
+cp -r "${TOOLS_ROOT}/../output/ios/curl-${ARCHS[0]}/include/"* "${LIB_DEST_DIR}/include"
 
 log_info "${PLATFORM_TYPE} ${LIB_NAME} end..."

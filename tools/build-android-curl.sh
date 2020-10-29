@@ -21,7 +21,7 @@ set -u
 source ./build-android-common.sh
 
 if [ -z ${version+x} ]; then 
-  version="7.68.0"
+  version="7.73.0"
 fi
 
 init_log_color

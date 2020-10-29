@@ -21,7 +21,7 @@ set -u
 source ./build-macos-common.sh
 
 if [ -z ${version+x} ]; then 
-  version="1.1.1d"
+  version="1.1.1h"
 fi
 echo $version
 
@@ -59,7 +59,6 @@ function configure_make() {
     ARCH=$1
     SDK=$2
     PLATFORM=$3
-    SDK_PATH=$(xcrun -sdk ${SDK} --show-sdk-path)
 
     log_info "configure $ARCH start..."
 
@@ -79,16 +78,16 @@ function configure_make() {
     OUTPUT_ROOT=${TOOLS_ROOT}/../output/macos/openssl-${ARCH}
     mkdir -p ${OUTPUT_ROOT}/log
 
-    set_macos_cpu_feature "openssl" "${ARCH}" "${MACOS_MIN_TARGET}" "${SDK_PATH}"
-    
-    macos_printf_global_params "$ARCH" "$SDK" "$PLATFORM" "$PREFIX_DIR" "$OUTPUT_ROOT"
+    set_macos_cpu_feature "openssl" "${ARCH}" "${MACOS_MIN_TARGET}" "${SDK}"
 
-    unset MACOSX_DEPLOYMENT_TARGET
+    macos_printf_global_params "$ARCH" "$SDK" "$PLATFORM" "$PREFIX_DIR" "$OUTPUT_ROOT"
+    
+    target_host=$(macos_get_build_host "$ARCH")
 
     if [[ "${ARCH}" == "x86_64" ]]; then
 
         # openssl1.1.1d can be set normally, 1.1.0f does not take effect
-        ./Configure darwin64-x86_64-cc no-shared --prefix="${PREFIX_DIR}"
+        ./Configure darwin64-x86_64-cc no-shared --prefix="${PREFIX_DIR}" --debug
 
     else
         log_error "not support" && exit 1
@@ -123,7 +122,9 @@ function lipo_library() {
     lipo ${LIB_PATHS[@]} -create -output "${LIB_DST}"
 }
 mkdir -p "${LIB_DEST_DIR}"
-lipo_library "libcrypto.a" "${LIB_DEST_DIR}/libcrypto-universal.a"
-lipo_library "libssl.a" "${LIB_DEST_DIR}/libssl-universal.a"
+lipo_library "libcrypto.a" "${LIB_DEST_DIR}/libcrypto.a"
+lipo_library "libssl.a" "${LIB_DEST_DIR}/libssl.a"
+mkdir -p "${LIB_DEST_DIR}/include"
+cp -r "${TOOLS_ROOT}/../output/macos/openssl-${ARCHS[0]}/include/"* "${LIB_DEST_DIR}/include"
 
 log_info "${PLATFORM_TYPE} ${LIB_NAME} end..."

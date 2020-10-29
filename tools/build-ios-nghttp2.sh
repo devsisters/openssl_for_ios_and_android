@@ -16,12 +16,12 @@
 
 # read -n1 -p "Press any key to continue..."
 
-set -u
+set -eux
 
 source ./build-ios-common.sh
 
 if [ -z ${version+x} ]; then 
-  version="1.40.0"
+  version="1.41.0"
 fi
 
 TOOLS_ROOT=$(pwd)
@@ -54,7 +54,6 @@ function configure_make() {
     ARCH=$1
     SDK=$2
     PLATFORM=$3
-    SDK_PATH=$(xcrun -sdk ${SDK} --show-sdk-path)
 
     log_info "configure $ARCH start..."
 
@@ -74,25 +73,27 @@ function configure_make() {
     OUTPUT_ROOT=${TOOLS_ROOT}/../output/ios/nghttp2-${ARCH}
     mkdir -p ${OUTPUT_ROOT}/log
 
-    set_ios_cpu_feature "nghttp2" "${ARCH}" "${IOS_MIN_TARGET}" "${SDK_PATH}"
+    set_ios_cpu_feature "nghttp2" "${ARCH}" "${IOS_MIN_TARGET}" "${SDK}"
 
     ios_printf_global_params "$ARCH" "$SDK" "$PLATFORM" "$PREFIX_DIR" "$OUTPUT_ROOT"
+    
+    target_host=$(ios_get_build_host "$ARCH")
 
     if [[ "${ARCH}" == "x86_64" ]]; then
 
-        ./configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     elif [[ "${ARCH}" == "armv7" ]]; then
 
-        ./configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     elif [[ "${ARCH}" == "arm64" ]]; then
 
-        ./configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     elif [[ "${ARCH}" == "arm64e" ]]; then
 
-        ./configure --host=$(ios_get_build_host "$ARCH") --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        ./configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     else
         log_error "not support" && exit 1
@@ -126,6 +127,8 @@ function lipo_library() {
     lipo ${LIB_PATHS[@]} -create -output "${LIB_DST}"
 }
 mkdir -p "${LIB_DEST_DIR}"
-lipo_library "libnghttp2.a" "${LIB_DEST_DIR}/libnghttp2-universal.a"
+lipo_library "libnghttp2.a" "${LIB_DEST_DIR}/libnghttp2.a"
+mkdir -p "${LIB_DEST_DIR}/include"
+cp -r "${TOOLS_ROOT}/../output/ios/nghttp2-${ARCHS[0]}/include/"* "${LIB_DEST_DIR}/include"
 
 log_info "${PLATFORM_TYPE} ${LIB_NAME} end..."

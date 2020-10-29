@@ -35,41 +35,22 @@ export ARCHS=(${arch[@]})
 export SDKS=(${sdk[@]})
 export PLATFORMS=(${platform[@]})
 
-function get_macos_arch() {
-    local common_arch=$1
-    case ${common_arch} in
-    x86_64)
-        echo "x86-64"
-        ;;
-    esac
-}
-
 function macos_get_build_host() {
-    local arch=$(get_macos_arch $1)
-    case ${arch} in
-    x86-64)
-        echo "x86_64-apple-darwin"
-        ;;
-    esac
+  echo "x86_64-apple-macos"
 }
 
 function set_macos_cpu_feature() {
     local name=$1
-    local arch=$(get_macos_arch $2)
+    local arch=$2
     local macos_min_target=$3
-    local sysroot=$4
-    case ${arch} in
-    x86-64)
-        export CC="xcrun -sdk macosx clang -arch x86_64"
-        export CXX="xcrun -sdk macosx clang++ -arch x86_64"
-        export CFLAGS="-arch x86_64 -target x86_64-apple-darwin -march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel -Wno-unused-function -fstrict-aliasing -O2 -Wno-ignored-optimization-argument -isysroot ${sysroot} -mmacosx-version-min=${macos_min_target} -I${sysroot}/usr/include"
-        export LDFLAGS="-arch x86_64 -target x86_64-apple-darwin -march=x86-64 -isysroot ${sysroot} -L${sysroot}/usr/lib "
-        export CXXFLAGS="-std=c++14 -arch x86_64 -target x86_64-apple-darwin -march=x86-64 -msse4.2 -mpopcnt -m64 -mtune=intel -fstrict-aliasing -mmacosx-version-min=${macos_min_target} -I${sysroot}/usr/include"
-        ;;
-    *)
-        log_error "not support" && exit 1
-        ;;
-    esac
+    local sdk=$4
+    export CC="xcrun -sdk ${sdk} clang -target "${arch}-apple-macos" -mmacosx-version-min=${macos_min_target} -Oz -Wno-ignored-optimization-argument -Wno-unused-function"
+    export CXX="xcrun -sdk ${sdk} clang++ -target "${arch}-apple-macos" -mmacosx-version-min=${macos_min_target} -Oz -Wno-ignored-optimization-argument -Wno-unused-function"
+    set +u
+    export CFLAGS=
+    export CXXFLAGS=
+    export LDFLAGS=
+    set -u
 }
 
 function macos_printf_global_params() {
