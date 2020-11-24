@@ -18,20 +18,19 @@ set -e
 # build every targets
 BASEDIR=$(dirname "$0")
 pushd "$BASEDIR/tools"
-# ./build-ios-openssl.sh
-# ./build-ios-nghttp2.sh
-# ./build-ios-curl.sh
-#./build-macos-openssl.sh
-#./build-macos-nghttp2.sh
-#./build-macos-curl.sh
-#exit 1;
 ./build-ios-openssl.sh \
+  && ./build-ios-libevent.sh \
   && ./build-ios-nghttp2.sh \
   && ./build-ios-curl.sh \
   && ./build-macos-openssl.sh \
+  && ./build-macos-libevent.sh \
   && ./build-macos-nghttp2.sh \
   && ./build-macos-curl.sh \
+  && ./build-android-xxhash.sh \
+  && ./build-android-zstd.sh \
+  && ./build-android-lz4.sh \
   && ./build-android-openssl.sh \
+  && ./build-android-libevent.sh \
   && ./build-android-nghttp2.sh \
   && ./build-android-curl.sh
 popd

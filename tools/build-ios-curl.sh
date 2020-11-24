@@ -87,23 +87,52 @@ function configure_make() {
     target_host=$(ios_get_build_host "$ARCH")
 
     if [[ "${ARCH}" == "x86_64" ]]; then
-
-        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --without-libidn2 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
-
-    elif [[ "${ARCH}" == "armv7" ]]; then
-
-        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
-
-    elif [[ "${ARCH}" == "arm64" ]]; then
-
-        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
-    
-    elif [[ "${ARCH}" == "arm64e" ]]; then
-
-        ./Configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --enable-static --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
-
+        ./Configure --host=$target_host --prefix="${PREFIX_DIR}" \
+          --disable-shared \
+          --enable-static \
+          --enable-ipv6 \
+          --with-ssl=${OPENSSL_OUT_DIR} \
+          --with-nghttp2=${NGHTTP2_OUT_DIR} \
+          --without-libidn2 \
+          --disable-ftp \
+          --disable-file \
+          --disable-ldap \
+          --disable-ldaps \
+          --disable-rtsp \
+          --disable-proxy \
+          --disable-dict \
+          --disable-telnet \
+          --disable-tftp \
+          --disable-pop3 \
+          --disable-imap \
+          --disable-smb \
+          --disable-smtp \
+          --disable-gopher \
+          --disable-mqtt \
+          --disable-manual >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
     else
-        log_error "not support" && exit 1
+        ./Configure --host=$target_host --prefix="${PREFIX_DIR}" \
+          --disable-shared \
+          --enable-static \
+          --enable-ipv6 \
+          --with-ssl=${OPENSSL_OUT_DIR} \
+          --with-nghttp2=${NGHTTP2_OUT_DIR} \
+          --disable-ftp \
+          --disable-file \
+          --disable-ldap \
+          --disable-ldaps \
+          --disable-rtsp \
+          --disable-proxy \
+          --disable-dict \
+          --disable-telnet \
+          --disable-tftp \
+          --disable-pop3 \
+          --disable-imap \
+          --disable-smb \
+          --disable-smtp \
+          --disable-gopher \
+          --disable-mqtt \
+          --disable-manual >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
     fi
 
     log_info "make $ARCH start..."

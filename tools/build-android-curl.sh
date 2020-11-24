@@ -49,14 +49,12 @@ echo "https://github.com/curl/curl/releases/download/${LIB_VERSION}/${LIB_NAME}.
 # https://github.com/curl/curl/releases/download/curl-7_69_0/curl-7.69.0.tar.gz
 # https://github.com/curl/curl/releases/download/curl-7_68_0/curl-7.68.0.tar.gz
 DEVELOPER=$(xcode-select -print-path)
-SDK_VERSION=$(xcrun -sdk iphoneos --show-sdk-version)
 rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
 [ -f "${LIB_NAME}.tar.gz" ] || curl -LO https://github.com/curl/curl/releases/download/${LIB_VERSION}/${LIB_NAME}.tar.gz >${LIB_NAME}.tar.gz
 
 set_android_toolchain_bin
 
 function configure_make() {
-
     ARCH=$1
     ABI=$2
     ABI_TRIPLE=$3
@@ -90,29 +88,30 @@ function configure_make() {
 
     export LDFLAGS="${LDFLAGS} -L${OPENSSL_OUT_DIR}/lib -L${NGHTTP2_OUT_DIR}/lib"
     # export LDFLAGS="-Wl,-rpath-link,-L${NGHTTP2_OUT_DIR}/lib,-L${OPENSSL_OUT_DIR}/lib $LDFLAGS "
-
     android_printf_global_params "$ARCH" "$ABI" "$ABI_TRIPLE" "$PREFIX_DIR" "$OUTPUT_ROOT"
-
-    if [[ "${ARCH}" == "x86_64" ]]; then
-
-        ./configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1
-
-    elif [[ "${ARCH}" == "x86" ]]; then
-
-        ./configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1
-
-    elif [[ "${ARCH}" == "arm" ]]; then
-
-        ./configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1
-
-    elif [[ "${ARCH}" == "arm64" ]]; then
-
-        # --enable-shared need nghttp2 cpp compile
-        ./configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" --disable-shared --enable-ipv6 --with-ssl=${OPENSSL_OUT_DIR} --with-nghttp2=${NGHTTP2_OUT_DIR} >"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1
-
-    else
-        log_error "not support" && exit 1
-    fi
+    ./Configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}"
+      --disable-shared \
+      --enable-static \
+      --enable-ipv6 \
+      --with-ssl=${OPENSSL_OUT_DIR} \
+      --with-nghttp2=${NGHTTP2_OUT_DIR} \
+      --without-libidn2 \
+      --disable-ftp \
+      --disable-file \
+      --disable-ldap \
+      --disable-ldaps \
+      --disable-rtsp \
+      --disable-proxy \
+      --disable-dict \
+      --disable-telnet \
+      --disable-tftp \
+      --disable-pop3 \
+      --disable-imap \
+      --disable-smb \
+      --disable-smtp \
+      --disable-gopher \
+      --disable-mqtt \
+      --disable-manual >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
 
     log_info "make $ABI start..."
 

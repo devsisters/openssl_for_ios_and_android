@@ -90,19 +90,19 @@ function configure_make() {
 
     if [[ "${ARCH}" == "x86_64" ]]; then
 
-        ./Configure android-x86_64 --prefix="${PREFIX_DIR}"
+        ./Configure android-x86_64 no-shared --prefix="${PREFIX_DIR}"
 
     elif [[ "${ARCH}" == "x86" ]]; then
 
-        ./Configure android-x86 --prefix="${PREFIX_DIR}"
+        ./Configure android-x86 no-shared --prefix="${PREFIX_DIR}"
 
     elif [[ "${ARCH}" == "arm" ]]; then
 
-        ./Configure android-arm --prefix="${PREFIX_DIR}"
+        ./Configure android-arm no-shared --prefix="${PREFIX_DIR}"
 
     elif [[ "${ARCH}" == "arm64" ]]; then
 
-        ./Configure android-arm64 --prefix="${PREFIX_DIR}"
+        ./Configure android-arm64 no-shared --prefix="${PREFIX_DIR}"
 
     else
         log_error "not support" && exit 1

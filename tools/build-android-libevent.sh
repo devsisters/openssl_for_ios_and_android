@@ -16,12 +16,12 @@
 
 # read -n1 -p "Press any key to continue..."
 
-set -eux
+set -eu
 
-source ./build-ios-common.sh
+source ./build-android-common.sh
 
 if [ -z ${version+x} ]; then 
-  version="1.41.0"
+  version="2.1.12"
 fi
 
 TOOLS_ROOT=$(pwd)
@@ -37,20 +37,20 @@ pwd_path="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 echo pwd_path=${pwd_path}
 echo TOOLS_ROOT=${TOOLS_ROOT}
 
-LIB_VERSION="v$version"
-LIB_NAME="nghttp2-$version"
-LIB_DEST_DIR="${pwd_path}/../output/ios/nghttp2-universal"
+LIB_NAME="libevent-$version"
+LIB_DEST_DIR="${pwd_path}/../output/ios/libevent-universal"
 
 init_log_color
 
-echo "https://github.com/nghttp2/nghttp2/releases/download/${LIB_VERSION}/${LIB_NAME}.tar.gz"
+echo "https://github.com/libevent/libevent/releases/download/release-${version}-stable/${LIB_NAME}-stable.tar.gz"
 
 DEVELOPER=$(xcode-select -print-path)
 rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
-[ -f "${LIB_NAME}.tar.gz" ] || curl -LO https://github.com/nghttp2/nghttp2/releases/download/${LIB_VERSION}/${LIB_NAME}.tar.gz >${LIB_NAME}.tar.gz
+[ -f "${LIB_NAME}-stable.tar.gz" ] || curl -LO "https://github.com/libevent/libevent/releases/download/release-${version}-stable/${LIB_NAME}-stable.tar.gz" >${LIB_NAME}-stable.tar.gz
+
+set_android_toolchain_bin
 
 function configure_make() {
-
     ARCH=$1
     SDK=$2
     PLATFORM=$3
@@ -60,29 +60,35 @@ function configure_make() {
     if [ -d "${LIB_NAME}" ]; then
         rm -fr "${LIB_NAME}"
     fi
-    tar xfz "${LIB_NAME}.tar.gz"
+    tar xfz "${LIB_NAME}-stable.tar.gz"
     pushd .
-    cd "${LIB_NAME}"
+    cd "${LIB_NAME}-stable"
 
-    PREFIX_DIR="${pwd_path}/../output/ios/nghttp2-${ARCH}"
+    PREFIX_DIR="${pwd_path}/../output/android/libevent-${ABI}"
     if [ -d "${PREFIX_DIR}" ]; then
         rm -fr "${PREFIX_DIR}"
     fi
     mkdir -p "${PREFIX_DIR}"
 
-    OUTPUT_ROOT=${TOOLS_ROOT}/../output/ios/nghttp2-${ARCH}
+    OUTPUT_ROOT=${TOOLS_ROOT}/../output/android/libevent-${ARCH}
     mkdir -p ${OUTPUT_ROOT}/log
 
-    set_ios_cpu_feature "nghttp2" "${ARCH}" "${IOS_MIN_TARGET}" "${SDK}"
+    set_android_toolchain "curl" "${ARCH}" "${ANDROID_API}"
+    set_android_cpu_feature "curl" "${ARCH}" "${ANDROID_API}"
 
-    ios_printf_global_params "$ARCH" "$SDK" "$PLATFORM" "$PREFIX_DIR" "$OUTPUT_ROOT"
-    
-    target_host=$(ios_get_build_host "$ARCH")
-    ./configure --host="$target_host" --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+    export ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}
+    echo ANDROID_NDK_HOME=${ANDROID_NDK_HOME}
+
+    OPENSSL_OUT_DIR="${pwd_path}/../output/android/openssl-${ARCH}"
+    export PKG_CONFIG_PATH="${OPENSSL_OUT_DIR}/lib/pkgconfig"
+
+    android_printf_global_params "$ARCH" "$ABI" "$ABI_TRIPLE" "$PREFIX_DIR" "$OUTPUT_ROOT"
+
+    ./Configure --host=$(android_get_build_host "${ARCH}") --disable-shared --prefix="${PREFIX_DIR}"
 
     log_info "make $ARCH start..."
 
-    make clean >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+    make clean >"${OUTPUT_ROOT}/log/${ARCH}.log"
     if make -j8 >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1; then
         make install >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
     fi
@@ -94,22 +100,8 @@ log_info "${PLATFORM_TYPE} ${LIB_NAME} start..."
 
 for ((i = 0; i < ${#ARCHS[@]}; i++)); do
     if [[ $# -eq 0 || "$1" == "${ARCHS[i]}" ]]; then
-        configure_make "${ARCHS[i]}" "${SDKS[i]}" "${PLATFORMS[i]}"
+        configure_make "${ARCHS[i]}" "${ABIS[i]}" "${ARCHS[i]}-linux-android"
     fi
 done
-
-log_info "lipo start..."
-
-function lipo_library() {
-    LIB_SRC=$1
-    LIB_DST=$2
-    LIB_PATHS=("${ARCHS[@]/#/${pwd_path}/../output/ios/nghttp2-}")
-    LIB_PATHS=("${LIB_PATHS[@]/%//lib/${LIB_SRC}}")
-    lipo ${LIB_PATHS[@]} -create -output "${LIB_DST}"
-}
-mkdir -p "${LIB_DEST_DIR}"
-lipo_library "libnghttp2.a" "${LIB_DEST_DIR}/libnghttp2.a"
-mkdir -p "${LIB_DEST_DIR}/include"
-cp -r "${TOOLS_ROOT}/../output/ios/nghttp2-${ARCHS[0]}/include/"* "${LIB_DEST_DIR}/include"
 
 log_info "${PLATFORM_TYPE} ${LIB_NAME} end..."

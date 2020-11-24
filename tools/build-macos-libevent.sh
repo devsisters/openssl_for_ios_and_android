@@ -16,14 +16,13 @@
 
 # read -n1 -p "Press any key to continue..."
 
-set -u
+set -eu
 
 source ./build-macos-common.sh
 
 if [ -z ${version+x} ]; then 
-  version="1.1.1h"
+  version="2.1.12"
 fi
-echo $version
 
 TOOLS_ROOT=$(pwd)
 
@@ -38,24 +37,18 @@ pwd_path="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 echo pwd_path=${pwd_path}
 echo TOOLS_ROOT=${TOOLS_ROOT}
 
-# openssl-1.1.0f has a configure bug
-# openssl-1.1.1d has fix configure bug
-LIB_VERSION="OpenSSL_$(echo $version | sed 's/\./_/g')"
-LIB_NAME="openssl-$version"
-LIB_DEST_DIR="${pwd_path}/../output/macos/openssl-universal"
+LIB_NAME="libevent-$version"
+LIB_DEST_DIR="${pwd_path}/../output/macos/libevent-universal"
 
 init_log_color
 
-echo "https://www.openssl.org/source/${LIB_NAME}.tar.gz"
+echo "https://github.com/libevent/libevent/releases/download/release-${version}-stable/${LIB_NAME}-stable.tar.gz"
 
-# https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz
-# https://github.com/openssl/openssl/archive/OpenSSL_1_1_1f.tar.gz
 DEVELOPER=$(xcode-select -print-path)
 rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
-[ -f "${LIB_NAME}.tar.gz" ] || curl https://www.openssl.org/source/${LIB_NAME}.tar.gz >${LIB_NAME}.tar.gz
+[ -f "${LIB_NAME}-stable.tar.gz" ] || curl -LO "https://github.com/libevent/libevent/releases/download/release-${version}-stable/${LIB_NAME}-stable.tar.gz" >${LIB_NAME}-stable.tar.gz
 
 function configure_make() {
-
     ARCH=$1
     SDK=$2
     PLATFORM=$3
@@ -65,40 +58,34 @@ function configure_make() {
     if [ -d "${LIB_NAME}" ]; then
         rm -fr "${LIB_NAME}"
     fi
-    tar xfz "${LIB_NAME}.tar.gz"
+    tar xfz "${LIB_NAME}-stable.tar.gz"
     pushd .
-    cd "${LIB_NAME}"
+    cd "${LIB_NAME}-stable"
 
-    PREFIX_DIR="${pwd_path}/../output/macos/openssl-${ARCH}"
+    PREFIX_DIR="${pwd_path}/../output/macos/libevent-${ARCH}"
     if [ -d "${PREFIX_DIR}" ]; then
         rm -fr "${PREFIX_DIR}"
     fi
     mkdir -p "${PREFIX_DIR}"
 
-    OUTPUT_ROOT=${TOOLS_ROOT}/../output/macos/openssl-${ARCH}
+    OUTPUT_ROOT=${TOOLS_ROOT}/../output/macos/libevent-${ARCH}
     mkdir -p ${OUTPUT_ROOT}/log
 
-    set_macos_cpu_feature "openssl" "${ARCH}" "${MACOS_MIN_TARGET}" "${SDK}"
+    set_macos_cpu_feature "libevent" "${ARCH}" "${MACOS_MIN_TARGET}" "${SDK}"
+
+    OPENSSL_OUT_DIR="${pwd_path}/../output/macos/openssl-${ARCH}"
+    export PKG_CONFIG_PATH="${OPENSSL_OUT_DIR}/lib/pkgconfig"
 
     macos_printf_global_params "$ARCH" "$SDK" "$PLATFORM" "$PREFIX_DIR" "$OUTPUT_ROOT"
-    
+
     target_host=$(macos_get_build_host "$ARCH")
-
-    if [[ "${ARCH}" == "x86_64" ]]; then
-
-        # openssl1.1.1d can be set normally, 1.1.0f does not take effect
-        ./Configure darwin64-x86_64-cc no-shared --prefix="${PREFIX_DIR}"
-
-    else
-        log_error "not support" && exit 1
-    fi
+    ./configure --host="$target_host" --disable-shared --prefix="${PREFIX_DIR}"
 
     log_info "make $ARCH start..."
 
     make clean >"${OUTPUT_ROOT}/log/${ARCH}.log"
     if make -j8 >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1; then
-        make install_sw >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
-        make install_ssldirs >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+        make install >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
     fi
 
     popd
@@ -117,14 +104,14 @@ log_info "lipo start..."
 function lipo_library() {
     LIB_SRC=$1
     LIB_DST=$2
-    LIB_PATHS=("${ARCHS[@]/#/${pwd_path}/../output/macos/openssl-}")
+    LIB_PATHS=("${ARCHS[@]/#/${pwd_path}/../output/macos/libevent-}")
     LIB_PATHS=("${LIB_PATHS[@]/%//lib/${LIB_SRC}}")
     lipo ${LIB_PATHS[@]} -create -output "${LIB_DST}"
 }
 mkdir -p "${LIB_DEST_DIR}"
-lipo_library "libcrypto.a" "${LIB_DEST_DIR}/libcrypto.a"
-lipo_library "libssl.a" "${LIB_DEST_DIR}/libssl.a"
+lipo_library "libevent.a" "${LIB_DEST_DIR}/libevent.a"
+lipo_library "libevent_pthreads.a" "${LIB_DEST_DIR}/libevent_pthreads.a"
 mkdir -p "${LIB_DEST_DIR}/include"
-cp -r "${TOOLS_ROOT}/../output/macos/openssl-${ARCHS[0]}/include/"* "${LIB_DEST_DIR}/include"
+cp -r "${TOOLS_ROOT}/../output/macos/libevent-${ARCHS[0]}/include/"* "${LIB_DEST_DIR}/include"
 
 log_info "${PLATFORM_TYPE} ${LIB_NAME} end..."

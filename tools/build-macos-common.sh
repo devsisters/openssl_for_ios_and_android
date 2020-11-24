@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 source ./build-common.sh
 
 if [ -z ${api+x} ]; then 
@@ -46,11 +48,9 @@ function set_macos_cpu_feature() {
     local sdk=$4
     export CC="xcrun -sdk ${sdk} clang -target "${arch}-apple-macos" -mmacosx-version-min=${macos_min_target} -Oz -Wno-ignored-optimization-argument -Wno-unused-function"
     export CXX="xcrun -sdk ${sdk} clang++ -target "${arch}-apple-macos" -mmacosx-version-min=${macos_min_target} -Oz -Wno-ignored-optimization-argument -Wno-unused-function"
-    set +u
     export CFLAGS=
     export CXXFLAGS=
     export LDFLAGS=
-    set -u
 }
 
 function macos_printf_global_params() {

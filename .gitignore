@@ -8,6 +8,12 @@ tools/*-android-toolchain
 tools/curl-*
 tools/openssl-*
 tools/protobuf-*
+tools/libevent-*
+tools/zstd-*
+tools/xxHash-*
+tools/lz4-*
+tools/rsync-*
+
 output/
 .xcuserstate
 

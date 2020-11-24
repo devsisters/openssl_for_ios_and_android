@@ -45,7 +45,6 @@ echo "https://download.samba.org/pub/rsync/${LIB_NAME}.tar.gz"
 # https://github.com/curl/curl/releases/download/curl-7_69_0/curl-7.69.0.tar.gz
 # https://github.com/curl/curl/releases/download/curl-7_68_0/curl-7.68.0.tar.gz
 DEVELOPER=$(xcode-select -print-path)
-SDK_VERSION=$(xcrun -sdk iphoneos --show-sdk-version)
 rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
 [ -f "${LIB_NAME}.tar.gz" ] || curl -LO https://download.samba.org/pub/rsync/${LIB_NAME}.tar.gz >${LIB_NAME}.tar.gz
 
