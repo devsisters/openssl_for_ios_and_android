@@ -17,19 +17,22 @@
 source ./build-common.sh
 
 if [ -z ${arch+x} ]; then 
-  arch=("arm" "arm64" "x86" "x86_64")
+  #arch=("arm" "arm64" "x86" "x86_64")
+  arch=("arm" "arm64")
 fi
 if [ -z ${abi+x} ]; then 
-  abi=("armeabi-v7a" "arm64-v8a" "x86" "x86_64")
+  #abi=("armeabi-v7a" "arm64-v8a" "x86" "x86_64")
+  abi=("armeabi-v7a" "arm64-v8a")
 fi
 if [ -z ${api+x} ]; then 
-  api=23
+  #api=("16" "21" "16" "21")
+  api=("16" "21")
 fi
 
 export PLATFORM_TYPE="Android"
 export ARCHS=(${arch[@]})
 export ABIS=(${abi[@]})
-export ANDROID_API=(${api[@]})
+export APIS=(${api[@]})
 
 # for test
 # export ARCHS=("x86_64")

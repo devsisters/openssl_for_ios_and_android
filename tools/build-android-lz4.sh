@@ -48,10 +48,10 @@ rm -rf "${LIB_DEST_DIR}" "${LIB_NAME}"
 set_android_toolchain_bin
 
 function configure_make() {
-
     ARCH=$1
     ABI=$2
     ABI_TRIPLE=$3
+    ANDROID_API=$4
 
     log_info "configure $ABI start..."
 
@@ -116,7 +116,7 @@ log_info "${PLATFORM_TYPE} ${LIB_NAME} start..."
 
 for ((i = 0; i < ${#ARCHS[@]}; i++)); do
     if [[ $# -eq 0 || "$1" == "${ARCHS[i]}" ]]; then
-        configure_make "${ARCHS[i]}" "${ABIS[i]}" "${ARCHS[i]}-linux-android"
+        configure_make "${ARCHS[i]}" "${ABIS[i]}" "${ARCHS[i]}-linux-android" "${APIS[i]}"
     fi
 done
 

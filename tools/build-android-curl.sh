@@ -58,6 +58,7 @@ function configure_make() {
     ARCH=$1
     ABI=$2
     ABI_TRIPLE=$3
+    ANDROID_API=$4
 
     log_info "configure $ABI start..."
 
@@ -89,7 +90,7 @@ function configure_make() {
     export LDFLAGS="${LDFLAGS} -L${OPENSSL_OUT_DIR}/lib -L${NGHTTP2_OUT_DIR}/lib"
     # export LDFLAGS="-Wl,-rpath-link,-L${NGHTTP2_OUT_DIR}/lib,-L${OPENSSL_OUT_DIR}/lib $LDFLAGS "
     android_printf_global_params "$ARCH" "$ABI" "$ABI_TRIPLE" "$PREFIX_DIR" "$OUTPUT_ROOT"
-    ./Configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}"
+    ./Configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" \
       --disable-shared \
       --enable-static \
       --enable-ipv6 \
@@ -127,7 +128,7 @@ log_info "${PLATFORM_TYPE} ${LIB_NAME} start..."
 
 for ((i = 0; i < ${#ARCHS[@]}; i++)); do
     if [[ $# -eq 0 || "$1" == "${ARCHS[i]}" ]]; then
-        configure_make "${ARCHS[i]}" "${ABIS[i]}" "${ARCHS[i]}-linux-android"
+        configure_make "${ARCHS[i]}" "${ABIS[i]}" "${ARCHS[i]}-linux-android" "${APIS[i]}"
     fi
 done
 
