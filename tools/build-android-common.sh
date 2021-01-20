@@ -23,7 +23,7 @@ if [ -z ${abi+x} ]; then
   abi=("armeabi-v7a" "arm64-v8a" "x86" "x86_64")
 fi
 if [ -z ${api+x} ]; then 
-  api=23
+  api=21
 fi
 
 export PLATFORM_TYPE="Android"

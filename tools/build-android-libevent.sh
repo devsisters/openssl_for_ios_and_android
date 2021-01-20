@@ -52,10 +52,10 @@ set_android_toolchain_bin
 
 function configure_make() {
     ARCH=$1
-    SDK=$2
-    PLATFORM=$3
+    ABI=$2
+    ABI_TRIPLE=$3
 
-    log_info "configure $ARCH start..."
+    log_info "configure $ABI start..."
 
     if [ -d "${LIB_NAME}" ]; then
         rm -fr "${LIB_NAME}"
@@ -73,13 +73,13 @@ function configure_make() {
     OUTPUT_ROOT=${TOOLS_ROOT}/../output/android/libevent-${ARCH}
     mkdir -p ${OUTPUT_ROOT}/log
 
-    set_android_toolchain "curl" "${ARCH}" "${ANDROID_API}"
-    set_android_cpu_feature "curl" "${ARCH}" "${ANDROID_API}"
+    set_android_toolchain "libevent" "${ARCH}" "${ANDROID_API}"
+    set_android_cpu_feature "libevent" "${ARCH}" "${ANDROID_API}"
 
     export ANDROID_NDK_HOME=${ANDROID_NDK_ROOT}
     echo ANDROID_NDK_HOME=${ANDROID_NDK_HOME}
 
-    OPENSSL_OUT_DIR="${pwd_path}/../output/android/openssl-${ARCH}"
+    OPENSSL_OUT_DIR="${pwd_path}/../output/android/openssl-${ABI}"
     export PKG_CONFIG_PATH="${OPENSSL_OUT_DIR}/lib/pkgconfig"
 
     android_printf_global_params "$ARCH" "$ABI" "$ABI_TRIPLE" "$PREFIX_DIR" "$OUTPUT_ROOT"
@@ -88,9 +88,9 @@ function configure_make() {
 
     log_info "make $ARCH start..."
 
-    make clean >"${OUTPUT_ROOT}/log/${ARCH}.log"
-    if make -j8 >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1; then
-        make install >>"${OUTPUT_ROOT}/log/${ARCH}.log" 2>&1
+    make clean >"${OUTPUT_ROOT}/log/${ABI}.log"
+    if make -j8 >>"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1; then
+        make install >>"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1
     fi
 
     popd

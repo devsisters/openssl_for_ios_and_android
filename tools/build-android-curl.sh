@@ -89,7 +89,7 @@ function configure_make() {
     export LDFLAGS="${LDFLAGS} -L${OPENSSL_OUT_DIR}/lib -L${NGHTTP2_OUT_DIR}/lib"
     # export LDFLAGS="-Wl,-rpath-link,-L${NGHTTP2_OUT_DIR}/lib,-L${OPENSSL_OUT_DIR}/lib $LDFLAGS "
     android_printf_global_params "$ARCH" "$ABI" "$ABI_TRIPLE" "$PREFIX_DIR" "$OUTPUT_ROOT"
-    ./Configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}"
+    ./Configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" \
       --disable-shared \
       --enable-static \
       --enable-ipv6 \

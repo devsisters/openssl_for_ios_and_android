@@ -100,6 +100,7 @@ function configure_make() {
 
         ./Configure android-arm no-shared --prefix="${PREFIX_DIR}"
 
+
     elif [[ "${ARCH}" == "arm64" ]]; then
 
         ./Configure android-arm64 no-shared --prefix="${PREFIX_DIR}"
