@@ -16,7 +16,7 @@
 
 # # read -n1 -p "Press any key to continue..."
 
-set -u
+set -ux
 
 source ./build-android-common.sh
 
@@ -82,7 +82,7 @@ function configure_make() {
     echo ANDROID_NDK_HOME=${ANDROID_NDK_HOME}
 
     android_printf_global_params "$ARCH" "$ABI" "$ABI_TRIPLE" "$PREFIX_DIR" "$OUTPUT_ROOT"
-    ./configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1
+    ./configure --host=$(android_get_build_host "${ARCH}") --prefix="${PREFIX_DIR}" --disable-shared --disable-app --disable-threads --enable-lib-only >"${OUTPUT_ROOT}/log/${ABI}.log" 2>&1
 
     log_info "make $ABI start..."
 

@@ -16,7 +16,7 @@
 
 # # read -n1 -p "Press any key to continue..."
 
-set -u
+set -ux
 
 source ./build-android-common.sh
 
@@ -69,7 +69,12 @@ function configure_make() {
     fi
     tar xfz "${LIB_NAME}.tar.gz"
     pushd .
+    # temp patch for supporting Android NDK r22
+    cp "patches/patch-openssl-15-android.conf" "${LIB_NAME}/Configurations/15-android.conf"
+    # end
+
     cd "${LIB_NAME}"
+
 
     PREFIX_DIR="${pwd_path}/../output/android/openssl-${ABI}"
     if [ -d "${PREFIX_DIR}" ]; then
